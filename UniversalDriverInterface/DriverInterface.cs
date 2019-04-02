@@ -806,52 +806,5 @@ namespace UniversalDriverInterface
             m_OASDriverInterface.WriteValues += m_OASDriverInterface_WriteValues;
         }
 
-        #region MicroLoad Code
-
-
-        //public string RequestStatus()
-        //{
-        //    byte[] sendData;
-        //    byte[] receiveData = new byte[255];
-        //    int rec = 0;
-
-        //    sendData = Encoding.ASCII.GetBytes("\x02" + "01" + "RS" + "\x03" + "\x03");
-        //    //Console.WriteLine($"sendData = : {Encoding.ASCII.GetString(sendData)}");
-        //    sock.Send(sendData, 0, sendData.Length, 0);
-        //    rec = sock.Receive(receiveData);
-        //    Array.Resize(ref receiveData, rec);
-        //    string statusResultString = Encoding.ASCII.GetString(receiveData, 0, receiveData.Length);
-        //    //Console.WriteLine("Raw result string: {0}", statusResultString.ToString());
-        //    if (statusResultString.Contains("AU"))
-        //        return "Arm Authorized";
-        //    else if (statusResultString.Contains("BD"))
-        //        return "Idle";
-        //    else if (statusResultString.Contains("FL") || statusResultString.Contains("TP"))
-        //        return "In Progress";
-        //    else
-        //        return "Unable to determine";
-        //    return null;
-        //}
-
-        public string SendCommand(string command)
-        {
-            byte[] sendData;
-            byte[] receiveData = new byte[255];
-            int rec = 0;
-
-            sendData = Encoding.ASCII.GetBytes("\x02" + "01" + command + "\x03" + "\x03");
-            sock.Send(sendData, 0, sendData.Length, 0);
-            rec = sock.Receive(receiveData);
-            Array.Resize(ref receiveData, rec);
-            string statusResultString = Encoding.ASCII.GetString(receiveData, 0, receiveData.Length);
-            return statusResultString;
-        }
-
-        Socket socket()
-        {
-            return new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-        }
-
-        #endregion
     }
 }

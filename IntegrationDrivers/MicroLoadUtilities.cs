@@ -325,7 +325,7 @@ namespace IntegrationDrivers
                     var monitorLoad = SendCommand("RS");
                     if(monitorLoad.Contains("BD") && monitorLoad.Contains("TD"))
                     {
-                        updateStatus("Complete");
+                        
                         var transactionNumber = SendCommand("TS");
                         if (transactionNumber != null)
                         {
@@ -420,11 +420,6 @@ namespace IntegrationDrivers
                                         t.Value = transactionValues[28];
                                         t.LastRead = endTime;
                                     }
-                                    //else if (t.TagName.Contains("LoadComplete"))
-                                    //{
-                                    //    t.Value = true;
-                                    //    t.LastRead = endTime;
-                                    //}
                                 }
                                 loadStatus = 4;
                             }
@@ -435,9 +430,12 @@ namespace IntegrationDrivers
                 }
                 else if (loadStatus == 4)
                 {
+                    updateStatus("Complete");
+
                     var setComplete = tagList.Where(x => x.TagName.Contains("LoadComplete")).First();
                     setComplete.Value = true;
                     setComplete.LastRead = DateTime.Now;
+
                     Thread.Sleep(5000);
 
                     resetTagModel();
