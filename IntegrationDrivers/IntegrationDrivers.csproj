@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Linq" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="OASDriverInterface">
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Open Automation Software\OPC Systems.NET\OASDriverInterface.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
