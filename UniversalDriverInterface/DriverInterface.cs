@@ -22,13 +22,15 @@ namespace UniversalDriverInterface
         private string m_mlPort = "7734";
         private string m_VolumeUnits = "Gallons";
         private string m_armAddress = "01";
+        private int m_cartId = 1;
 
-        
         private int promptStep = 0;
         private int promptCount;
         private string initialPrompt;
         private List<Prompts> prompts = new List<Prompts>();
         private List<TagModel> tagList = new List<TagModel>();
+        public Queue m_DataValuesQueue = new Queue();
+        private Hashtable m_DataValuesHashTable = new Hashtable();
 
         //private string firstPrompt = "First prompt:";
         //private string firstPromptLength = "05";
@@ -41,7 +43,7 @@ namespace UniversalDriverInterface
         private void InitializeInstanceFields()
         {
             promptStep = 1;
-
+            
             oasTagTimer = new Timer(UpdateOASTagTimerRoutine, null, Timeout.Infinite, Timeout.Infinite);
             readMicroLoad = new Timer(ReadMicroloadValuesRoutine, null, Timeout.Infinite, Timeout.Infinite);
         }
@@ -272,6 +274,7 @@ namespace UniversalDriverInterface
 
                 //    string[] LocationsToAdd = new[] { "10001", "96795", "10115,de", "75000,fr", "00171,it", "08001,es", "M4B,ca" };
                 string[] TagsToAdd = new[] {
+                    "CartId",
                     "Status",
                     "OperatorId",
                     "OrderId",
@@ -354,6 +357,12 @@ namespace UniversalDriverInterface
                             {
                                 dType = "Integer";
                                 dataPoint = "TransactionNum";
+                                break;
+                            }
+                        case "CartId":
+                            {
+                                dType = "Integer";
+                                dataPoint = "Configuration";
                                 break;
                             }
                         case "IVVolume" :
@@ -651,25 +660,6 @@ namespace UniversalDriverInterface
         #region Demo Driver Code
         //This is a simple example of getting the properties of a tag and using that to generate a update to the tag value
         
-        private void RequestStatusTimer(object State)
-        {
-            //try
-            //{
-            //    if (m_InTimerRoutine)
-            //        return;
-
-            //    m_InTimerRoutine = true;
-            //    DateTime currentTime = DateTime.Now;
-            //    double localSeconds = currentTime.Second + (currentTime.Millisecond / (double)1000);
-
-            //    lock (m_Tags.SyncRoot)
-            //}
-            //catch (Exception e)
-            //{
-
-            //}
-            
-        }
         private void ReadMicroloadValuesRoutine(object State)
         {
             tagList = m_mlUtilities.UpdateModel(tagList);

@@ -3,6 +3,7 @@ using OASDriverInterface;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -18,6 +19,7 @@ namespace IntegrationDrivers
         string mlUnits;
         string mlPortNumber;
         string mlArmAddress;
+        private int m_CartId = 1;
         private bool m_inStatusTimer = false;
         private Timer statusTimer;
         private Timer dynamicDisplayTimer;
@@ -43,7 +45,8 @@ namespace IntegrationDrivers
             Time = 3,
             Volume = 4,
             Totalizer = 5,
-            TransactionAvgs = 6
+            TransactionAvgs = 6,
+            Configuration = 7
         }
 
         public enum MeasurementType
@@ -70,9 +73,6 @@ namespace IntegrationDrivers
             
             if( totalPromptCount > 0)
             {
-                var loadComplete = tagList.Where(x => x.TagName.Contains("LoadComplete")).First();
-                loadComplete.Value = false;
-                loadComplete.LastRead = DateTime.Now;
                 loadStatus = 0;
 
                 var firstPrompt = prompts.Where(x => x.Order == 1).First();
@@ -210,6 +210,11 @@ namespace IntegrationDrivers
             {
 
                 m_inStatusTimer = true;
+
+                var cartId = tagList.Where(x => x.TagName.Contains("CartId")).First();
+                cartId.Value = m_CartId;
+                cartId.LastRead = DateTime.Now;
+
                 if (loadStatus == 0)
                 {
                     if (promptStep == 1)
@@ -218,7 +223,7 @@ namespace IntegrationDrivers
                         var result = SendCommand("RS");
                         if (result.Contains("KY"))
                         {
-                            //resetTagModel();
+                            resetTagModel();
 
                             updateStatus("In Prompts");
                             var promptResult = SendCommand("RK");
@@ -329,15 +334,27 @@ namespace IntegrationDrivers
                         var transactionNumber = SendCommand("TS");
                         if (transactionNumber != null)
                         {
+                            Stopwatch sw = new Stopwatch();
+
+                            sw.Start();
                             var updTrans = tagList.Where(x => x.DataPoint != "Prompt");
 
                             var transNum = transactionNumber.Substring(7, 10);
-
+                            sw.Stop();
+                            Console.WriteLine($"updTrans execution time: {sw.ElapsedMilliseconds}");
+                            sw.Reset();
+                            sw.Start();
                             var transData = SendCommand("TR " + transNum);
+                            sw.Stop();
+                            Console.WriteLine($"Get TransData time: {sw.ElapsedMilliseconds}");
                             if (transData != null)
                             {
+                                sw.Reset();
+                                sw.Start();
                                 DateTime endTime = DateTime.Now;
                                 List<string> transactionValues = transData.Split(',').ToList<string>();
+                                sw.Stop();
+                                Console.WriteLine($"List execution time: {sw.ElapsedMilliseconds}");
                                 foreach (var t in updTrans)
                                 {
                                     if (t.TagName.Contains("IVVolume"))
@@ -421,6 +438,9 @@ namespace IntegrationDrivers
                                         t.LastRead = endTime;
                                     }
                                 }
+
+                                Thread.Sleep(5000);
+
                                 loadStatus = 4;
                             }
                         }
@@ -436,9 +456,6 @@ namespace IntegrationDrivers
                     setComplete.Value = true;
                     setComplete.LastRead = DateTime.Now;
 
-                    Thread.Sleep(5000);
-
-                    resetTagModel();
                     LoadPrompts(prompts);
                     m_inStatusTimer = false;
                     return;
@@ -467,6 +484,10 @@ namespace IntegrationDrivers
 
         private void resetTagModel()
         {
+            //var loadComplete = tagList.Where(x => x.TagName.Contains("LoadComplete")).First();
+            //loadComplete.Value = false;
+            //loadComplete.LastRead = DateTime.Now;
+
             var resetTags = tagList;
             foreach(var t in tagList)
             {
@@ -474,7 +495,6 @@ namespace IntegrationDrivers
                 t.Value = 0;
             }
         }
-
 
         private void updateStatus(string status)
         {
