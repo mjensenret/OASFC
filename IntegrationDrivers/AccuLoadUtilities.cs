@@ -30,6 +30,10 @@ namespace IntegrationDrivers
         public override bool Connect(string ipAddress, string armAddress, string port)
         {
             m_connected = base.Connect(ipAddress, armAddress, port);
+            if(m_connected)
+            {
+                statusTimer.Change(1000, 1000);
+            }
             return m_connected;
         }
 
