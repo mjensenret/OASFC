@@ -7,19 +7,20 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using IntegrationDrivers.Models;
-using static IntegrationDrivers.MicroloadUtilities;
+using static IntegrationDrivers.MicroLoadUtilities;
 using System.Linq;
+using static IntegrationDrivers.Infrastructure.Enumerations;
 
 namespace UniversalDriverInterface
 {
     public class DriverInterface
     {
-        Socket sock;
+
         //Demo Enumerations
         private bool InstanceFieldsInitialized = false;
 
         private string m_IpAddress = "10.4.12.26";
-        private string m_mlPort = "7734";
+        private string m_Port = "7734";
         private string m_VolumeUnits = "Gallons";
         private string m_armAddress = "01";
         private int m_cartId = 1;
@@ -32,23 +33,15 @@ namespace UniversalDriverInterface
         public Queue m_DataValuesQueue = new Queue();
         private Hashtable m_DataValuesHashTable = new Hashtable();
 
-        //private string firstPrompt = "First prompt:";
-        //private string firstPromptLength = "05";
-        //private string secondPrompt = "Second prompt:";
-        //private string secondPromptLength = "05";
-
-        private string status;
-
-
         private void InitializeInstanceFields()
         {
-            promptStep = 1;
+            //promptStep = 1;
             
             oasTagTimer = new Timer(UpdateOASTagTimerRoutine, null, Timeout.Infinite, Timeout.Infinite);
             readMicroLoad = new Timer(ReadMicroloadValuesRoutine, null, Timeout.Infinite, Timeout.Infinite);
         }
 
-        private IntegrationDrivers.MicroloadUtilities m_mlUtilities;
+        private IntegrationDrivers.BaseDriver m_device;
         //Interface to OAS - Do not remove or modify
         private OASDriverInterface.OASDriverInterface m_OASDriverInterface;
 
@@ -73,7 +66,7 @@ namespace UniversalDriverInterface
         //In the working example this is read from appsettings.json.  You can dynamically set this as well.  This must match the Machine Name defined in the Driver Interface of the OAS Service.
         private string m_MachineName = "FuelingInterface";
 
-        public DriverInterface(string OASServiceNode, string LiveDataCloudNode, int PortNumber, string MachineName, bool StoreAndForward, string UserName, string Password)
+        public DriverInterface(string OASServiceNode, string LiveDataCloudNode, int PortNumber, string MachineName, bool StoreAndForward, string UserName, string Password, string DeviceType)
         {
             if (!InstanceFieldsInitialized)
             {
@@ -83,7 +76,17 @@ namespace UniversalDriverInterface
             }
             m_MachineName = MachineName;
             m_OASDriverInterface = new OASDriverInterface.OASDriverInterface(m_DriverName, OASServiceNode, LiveDataCloudNode, PortNumber, MachineName, StoreAndForward, UserName, Password);
-            m_mlUtilities = new IntegrationDrivers.MicroloadUtilities();
+            if(DeviceType == "MicroLoad")
+            {
+                Console.WriteLine("Loading Microload....");
+                m_device = new IntegrationDrivers.MicroLoadUtilities();
+            }
+            else if (DeviceType == "AccuLoad")
+            {
+                Console.WriteLine("Loading AccuLoad....");
+                m_device = new IntegrationDrivers.AccuLoadUtilities();
+            }
+            
 
             m_OASDriverInterface.SetDefaults(GetDefaultDriverConfig(), false);
             m_OASDriverInterface.SetDefaults(GetDefaultTagConfig(), true);
@@ -131,6 +134,7 @@ namespace UniversalDriverInterface
                 //DriverProps.Add(new ClassProperty("DataRefreshTime", "Data Refresh Time", "The maximum number of seconds the data will be updated on the OpenWeatherMap server. \nThis is determined by the purchased Subscription and defaults to 2 hours for FREE subscriptions.\nThis acts as the global minimum time to wait before hitting the API server for updates despite what is set per Tag.", typeof(int), m_DataRefreshTime, ClassProperty.ePropInputType.Manual));
                 DriverProps.Add(new ClassProperty("IPAddress", "IP Address", "Device IP Address", typeof(string), m_IpAddress, ClassProperty.ePropInputType.Manual));
                 DriverProps.Add(new ClassProperty("ArmAddress", "Arm Address", "Address of the arm to connect to (number must include the preceding 0).", typeof(string), m_armAddress, ClassProperty.ePropInputType.Manual));
+                DriverProps.Add(new ClassProperty("Port", "Port", "TCP Port to connect to.", typeof(string), m_Port, ClassProperty.ePropInputType.Manual));
                 //DriverProps.Add(new ClassProperty("Units", "Units", "Used to set the units the Accuload is configured to measure", typeof(BaseDriver.VolumeUnits), BaseDriver.VolumeUnits.Gallons, ClassProperty.ePropInputType.Manual));
                 //DriverProps.Add(new ClassProperty("Test", "Test descr", "", typeof(string), "", ClassProperty.ePropInputType.Manual));
                 return DriverProps;
@@ -155,7 +159,7 @@ namespace UniversalDriverInterface
                 DriverProps.Add(new ClassProperty("IPAddress", "IP Address", "Device IP Address", typeof(string), m_IpAddress, ClassProperty.ePropInputType.Manual));
                 DriverProps.Add(new ClassProperty("ArmAddress", "Arm Address", "Address of the arm to connect to (number must include the preceding 0).", typeof(string), m_armAddress, ClassProperty.ePropInputType.Manual));
                 //DriverProps.Add(new ClassProperty("Units", "Units", "Used to set the units the Accuload is configured to measure", typeof(BaseDriver.VolumeUnits), BaseDriver.VolumeUnits.Gallons, ClassProperty.ePropInputType.Manual));
-                //DriverProps.Add(new ClassProperty("Test", "Test descr", "", typeof(string), "", ClassProperty.ePropInputType.Manual));
+                DriverProps.Add(new ClassProperty("Port", "Port", "TCP Port to connect to.", typeof(string), m_Port, ClassProperty.ePropInputType.Manual));
                 return DriverProps;
             }
             catch (Exception ex)
@@ -171,29 +175,19 @@ namespace UniversalDriverInterface
             Console.WriteLine("Connect");
             try
             {
-                // Get driver-level properties
-                //m_APIKey = (string)BaseFunctions.GetPropValue(m_DriverProps, "APIKey");
-                //m_DataRefreshTime = (int)BaseFunctions.GetPropValue(m_DriverProps, "DataRefreshTime");
-
-                //if ((string.IsNullOrWhiteSpace(m_APIKey)))
-                //    throw new ApplicationException("Missing OpenWeatherMap.org API Key - sign up for a free account");
-
-                // No need to establish any persistent connection since we're using a remote REST API
-                // We'll simply check the configured URL and off a timer for polling data
-
                 m_IpAddress = Convert.ToString(BaseFunctions.GetPropValue(m_DriverProps, "IPAddress"));
                 m_armAddress = Convert.ToString(BaseFunctions.GetPropValue(m_DriverProps, "ArmAddress"));
+                m_Port = Convert.ToString(BaseFunctions.GetPropValue(m_DriverProps, "Port"));
                 //m_VolumeUnits = Convert.ToString(BaseFunctions.GetPropValue(m_DriverProps, "Units"));
                 
                 
                 if (!(m_Connected))
                 {
-                    m_Connected = m_mlUtilities.Connect(m_IpAddress, m_armAddress);
+                    m_Connected = m_device.Connect(m_IpAddress, m_armAddress, m_Port);
                 }
                 m_Connected = true;
 
                 oasTagTimer.Change(500, 500);
-                //readMicroLoad.Change(10000, 10000);
             }
             catch (Exception ex)
             {
@@ -210,7 +204,7 @@ namespace UniversalDriverInterface
                 if (!(m_Connected))
                     return m_Connected;
 
-                m_mlUtilities.Disconnect();
+                m_device.Disconnect();
 
                 lock (m_Tags.SyncRoot)
                     m_Tags.Clear();
@@ -243,11 +237,6 @@ namespace UniversalDriverInterface
             {
                 List<ClassProperty> m_TagProps = new List<ClassProperty>();
 
-                //m_TagProps.Add(new ClassProperty("PostalCode", "Postal Code", "ZIP or Postal Code of the location for weather data.\n Use either the bare numeric code for US ZIP Codes, or NNNNN,CC format for other countries", typeof(string), "", ClassProperty.ePropInputType.Manual));
-
-                //m_TagProps.Add(new ClassProperty("DataPoint", "Data Point", "The data point to map to this Tag's Value property. Choose from:\n    JSONData : raw JSON String data from the API\n    Temperature : current Temperature\n    Description: current weather conditions\n    Pressure : atmospheric pressure (hPa)\n    Humidity: humidity(%)\n    WindSpeed : wind speed (m/sec)\n    WindDirection: wind direction(deg)\n    CloudCover : cloud cover (%)\n    RainVolume: volume of rain in the last hour\n    SnowVolume : volume of snow in the last hour\n    CityName : name of city for weather data", typeof(DataPoint), DataPoint.JSON, ClassProperty.ePropInputType.Manual));
-
-                //m_TagProps.Add(new ClassProperty("TempScale", "Temperature Scale", "The temperature scale to use, either Celsius or Fahrenheit", typeof(TempScale), TempScale.Celsius, ClassProperty.ePropInputType.Manual, "Visible,DataPoint.Temperature"));
                 m_TagProps.Add(new ClassProperty("DataPoint", "Data Point", "Choose the data point that this tag is recording.", typeof(DataPoint), DataPoint.Status, ClassProperty.ePropInputType.Manual));
                 m_TagProps.Add(new ClassProperty("PromptText", "Prompt Text", "Enter the text that you would like to display on the MicroLoad (21 character limit)", typeof(string), "Enter Prompt", ClassProperty.ePropInputType.Manual, "Visible,DataPoint.Prompt"));
                 m_TagProps.Add(new ClassProperty("PromptOrder", "Prompt Order", "Order of the prompt", typeof(int), 1, ClassProperty.ePropInputType.Manual, "Visible,DataPoint.Prompt"));
@@ -272,7 +261,6 @@ namespace UniversalDriverInterface
             {
                 List<List<ClassProperty>> m_Tags = new List<List<ClassProperty>>();
 
-                //    string[] LocationsToAdd = new[] { "10001", "96795", "10115,de", "75000,fr", "00171,it", "08001,es", "M4B,ca" };
                 string[] TagsToAdd = new[] {
                     "CartId",
                     "Status",
@@ -541,8 +529,8 @@ namespace UniversalDriverInterface
                             m_LastUpdateTime.Remove(TagID);
                     }
 
-                    m_mlUtilities.LoadTags(tagList);
-                    m_mlUtilities.LoadPrompts(prompts);
+                    m_device.LoadTags(tagList);
+                    m_device.LoadPrompts(prompts);
                     
                 }
 
@@ -662,7 +650,7 @@ namespace UniversalDriverInterface
         
         private void ReadMicroloadValuesRoutine(object State)
         {
-            tagList = m_mlUtilities.UpdateModel(tagList);
+            tagList = m_device.UpdateModel(tagList);
             foreach(var t in tagList)
             {
                 Console.WriteLine(t);
@@ -680,7 +668,7 @@ namespace UniversalDriverInterface
                 DateTime currentTime = DateTime.Now;
                 double localSeconds = currentTime.Second + (currentTime.Millisecond / (double)1000);
 
-                tagList = m_mlUtilities.ReturnCurrentTaglist();
+                tagList = m_device.ReturnCurrentTaglist();
 
                 ArrayList localArrayList = new ArrayList();
 

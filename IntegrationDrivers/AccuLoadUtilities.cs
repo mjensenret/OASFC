@@ -12,7 +12,7 @@ using System.Threading;
 
 namespace IntegrationDrivers
 {
-    public class MicroLoadUtilities : BaseDriver
+    public class AccuLoadUtilities : BaseDriver
     {
         private int m_CartId = 1;
         private bool m_inStatusTimer = false;
@@ -20,15 +20,12 @@ namespace IntegrationDrivers
         private Timer dynamicDisplayTimer;
         private bool m_connected;
 
-
-        
-        public MicroLoadUtilities()
-            : base()
+        public AccuLoadUtilities() :
+            base()
         {
             statusTimer = new Timer(StatusTimerRoutine, null, Timeout.Infinite, Timeout.Infinite);
             dynamicDisplayTimer = new Timer(DynamicDisplayTimer, null, Timeout.Infinite, Timeout.Infinite);
         }
-
 
         public override bool Connect(string ipAddress, string armAddress, string port)
         {
@@ -42,7 +39,7 @@ namespace IntegrationDrivers
             return base.Disconnect();
         }
 
-        public void DynamicDisplayTimer(object State)
+        private void DynamicDisplayTimer(object State)
         {
             var monitorLoad = SendCommand("RS");
             if (monitorLoad.Contains("BD") && monitorLoad.Contains("TD"))
@@ -100,7 +97,7 @@ namespace IntegrationDrivers
                                 var updTag = getTag(tagName);
                                 updTag.LastRead = DateTime.Now;
                                 updTag.Value = promptResult.Substring(7, promptLength);
-                                if(totalPromptCount > 1)
+                                if (totalPromptCount > 1)
                                 {
                                     var nextPrompt = getPromptTag(promptStep + 1);
                                     var nextPromptResult = SendNextPrompt(nextPrompt.Prompt, nextPrompt.PromptLength);
@@ -120,7 +117,7 @@ namespace IntegrationDrivers
                     }
                     else if (promptStep <= totalPromptCount)
                     {
-                        
+
                         var result = SendCommand("RS");
                         if (result != null && result.Contains("KY"))
                         {
@@ -132,7 +129,7 @@ namespace IntegrationDrivers
                                 var updTag = getTag(tagName);
                                 updTag.LastRead = DateTime.Now;
                                 updTag.Value = promptResult.Substring(7, promptLength);
-                                if(promptStep < totalPromptCount)
+                                if (promptStep < totalPromptCount)
                                 {
                                     var nextPrompt = getPromptTag(promptStep + 1);
                                     var nextPromptResult = SendNextPrompt(nextPrompt.Prompt, nextPrompt.PromptLength);
@@ -175,7 +172,7 @@ namespace IntegrationDrivers
                             tNumTag.LastRead = DateTime.Now;
                         }
 
-                        
+
                         loadStatus = 2;
                     }
                     m_inStatusTimer = false;
@@ -194,9 +191,9 @@ namespace IntegrationDrivers
                     updateStatus("Saving...");
 
                     var monitorLoad = SendCommand("RS");
-                    if(monitorLoad.Contains("BD") && monitorLoad.Contains("TD"))
+                    if (monitorLoad.Contains("BD") && monitorLoad.Contains("TD"))
                     {
-                        
+
                         var transactionNumber = SendCommand("TS");
                         if (transactionNumber != null)
                         {
@@ -293,12 +290,12 @@ namespace IntegrationDrivers
                                         t.Value = transactionValues[26];
                                         t.LastRead = endTime;
                                     }
-                                    else if(t.TagName.Contains("CTL"))
+                                    else if (t.TagName.Contains("CTL"))
                                     {
                                         t.Value = transactionValues[27];
                                         t.LastRead = endTime;
                                     }
-                                    else if(t.TagName.Contains("CPL"))
+                                    else if (t.TagName.Contains("CPL"))
                                     {
                                         t.Value = transactionValues[28];
                                         t.LastRead = endTime;

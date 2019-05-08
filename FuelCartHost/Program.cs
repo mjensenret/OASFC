@@ -21,6 +21,7 @@ namespace FuelCartHost
         private static bool StoreAndForward = true; // When enabled data will be buffered on network failure or when the service is not running.
         private static string UserName = ""; // Required if using automatic tag creation on service with security enabled.
         private static string Password = ""; // Required if using automatic tag creation on service with security enabled.
+        private static string DeviceType = "MicroLoad";
 
         private static AppDomain _dom;
 
@@ -66,6 +67,8 @@ namespace FuelCartHost
                     StoreAndForward = bool.Parse(config["OASDriverConfig:StoreAndForward"]);
                     UserName = config["OASDriverConfig:UserName"];
                     Password = config["OASDriverConfig:Password"];
+                    DeviceType = config["OASDriverConfig:DeviceType"];
+                    DeviceType = config["OASDriverConfig:DeviceType"];
                 }
                 catch (Exception)
                 {
@@ -73,7 +76,7 @@ namespace FuelCartHost
 
                 Console.WriteLine("Connecting...");
                 // create instance of UDI
-                m_Driver = new DriverInterface(ServiceNode, LiveDataCloudNode, PortNumber, MachineName, StoreAndForward, UserName, Password);
+                m_Driver = new DriverInterface(ServiceNode, LiveDataCloudNode, PortNumber, MachineName, StoreAndForward, UserName, Password, DeviceType);
 
                 ConsoleHost.WaitForShutdown();
             }
