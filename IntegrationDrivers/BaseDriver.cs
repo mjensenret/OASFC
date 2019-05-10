@@ -141,7 +141,7 @@ namespace IntegrationDrivers
             return result;
         }
 
-        public string SendNextPrompt(string promptValue, string promptLength)
+        public virtual string SendNextPrompt(string promptValue, string promptLength)
         {
             var result = SendCommand("WA 000 " + promptValue + "&" + promptLength);
             return result;

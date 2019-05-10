@@ -19,7 +19,8 @@ namespace UniversalDriverInterface
         //Demo Enumerations
         private bool InstanceFieldsInitialized = false;
 
-        private string m_IpAddress = "10.4.12.26";
+        private string m_IpAddress = "172.18.114.101";
+        //private string m_IpAddress = "10.4.12.26";
         private string m_Port = "7734";
         private string m_VolumeUnits = "Gallons";
         private string m_armAddress = "01";
