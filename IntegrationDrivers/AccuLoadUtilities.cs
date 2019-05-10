@@ -220,16 +220,88 @@ namespace IntegrationDrivers
                                     t.Value = Convert.ToDecimal(iv.Substring(15,8));
                                     t.LastRead = endTime;
                                 }
-                                else if(t.TagName.Contains("TransactionNumber"))
+                                else if (t.TagName.Contains("GVVolume"))
+                                {
+                                    var gv = SendCommand("RT G 001");
+                                    t.Value = Convert.ToDecimal(gv.Substring(15, 8));
+                                    t.LastRead = endTime;
+                                }
+                                else if (t.TagName.Contains("GSTVolume"))
+                                {
+                                    var gst = SendCommand("RT N 001");
+                                    t.Value = Convert.ToDecimal(gst.Substring(15, 8));
+                                    t.LastRead = endTime;
+                                }
+                                else if (t.TagName.Contains("GSVVolume"))
+                                {
+                                    var gsv = SendCommand("RT P 001");
+                                    t.Value = Convert.ToDecimal(gsv.Substring(15, 8));
+                                    t.LastRead = endTime;
+                                }
+                                else if (t.TagName.Contains("IVTotalizer"))
+                                {
+                                    var it = SendCommand("VT R 01");
+                                    t.Value = Convert.ToDecimal(it.Substring(13, 8));
+                                    t.LastRead = endTime;
+                                }
+                                else if (t.TagName.Contains("GVTotalizer"))
+                                {
+                                    var gvt = SendCommand("VT G 01");
+                                    t.Value = Convert.ToDecimal(gvt.Substring(13, 8));
+                                    t.LastRead = endTime;
+                                }
+                                else if (t.TagName.Contains("GSTTotalizer"))
+                                {
+                                    var gst = SendCommand("VT N 01");
+                                    t.Value = Convert.ToDecimal(gst.Substring(13, 8));
+                                    t.LastRead = endTime;
+                                }
+                                else if (t.TagName.Contains("GSVTotalizer"))
+                                {
+                                    var gsvt = SendCommand("VT P 01");
+                                    t.Value = Convert.ToDecimal(gsvt.Substring(13, 8));
+                                    t.LastRead = endTime;
+                                }
+                                else if (t.TagName.Contains("EndTime"))
+                                {
+                                    t.Value = endTime.ToString();
+                                    t.LastRead = endTime;
+                                }
+                                else if (t.TagName.Contains("MeterFactor"))
+                                {
+                                    var mf = SendCommand("PV P1 302");
+                                    //TODO: test using terminal & update this value
+                                    t.Value = 0;
+                                    //t.LastRead = endTime;
+                                }
+                                else if (t.TagName.Contains("Density"))
+                                {
+                                    var d = SendCommand("LD 01 001");
+                                    t.Value = Convert.ToDecimal(d.Substring(13,8));
+                                    t.LastRead = endTime;
+                                }
+                                else if (t.TagName.Contains("Pressure"))
+                                {
+                                    var p = SendCommand("LP 01 001");
+                                    t.Value = Convert.ToDecimal(p.Substring(13, 8));
+                                    t.LastRead = endTime;
+                                }
+                                else if (t.TagName.Contains("CTL"))
+                                {
+                                    var ctl = SendCommand("DY B110");
+                                    //t.Value = transactionValues[27];
+                                    //t.LastRead = endTime;
+                                }
+                                else if (t.TagName.Contains("CPL"))
+                                {
+                                    var cpl = SendCommand("DY B111");
+                                    //t.Value = transactionValues[28];
+                                    //t.LastRead = endTime;
+                                }
+                                else if (t.TagName.Contains("TransactionNumber"))
                                 {
                                     var tn = SendCommand("TN 001");
                                     t.Value = Convert.ToInt32(tn.Substring(6,5));
-                                    t.LastRead = endTime;
-                                }
-                                else if(t.TagName.Contains("IVTotalizer"))
-                                {
-                                    var it = SendCommand("VT R 01");
-                                    t.Value = Convert.ToDecimal(it.Substring(13,8));
                                     t.LastRead = endTime;
                                 }
                                 else if (t.TagName.Contains("Temperature"))
@@ -240,103 +312,8 @@ namespace IntegrationDrivers
                                 }
                             }
 
-                            //if (transData != null)
-                            //{
-                            //    sw.Reset();
-                            //    sw.Start();
-                            //    DateTime endTime = DateTime.Now;
-                            //    List<string> transactionValues = transData.Split(',').ToList<string>();
-                            //    sw.Stop();
-                            //    Console.WriteLine($"List execution time: {sw.ElapsedMilliseconds}");
-                            //    foreach (var t in updTrans)
-                            //    {
-                            //        if (t.TagName.Contains("IVVolume"))
-                            //        {
-                            //            var iv = SendCommand("RT R 001");
-                            //            t.Value = iv;
-                            //            t.LastRead = endTime;
-                            //        }
-                            //        else if (t.TagName.Contains("TransactionNumber"))
-                            //        {
-                            //            t.Value = transactionValues[1];
-                            //            t.LastRead = endTime;
-                            //        }
-                            //        else if (t.TagName.Contains("IVTotalizer"))
-                            //        {
-                            //            t.Value = transactionValues[29];
-                            //            t.LastRead = endTime;
-                            //        }
-                            //        else if (t.TagName.Contains("GVVolume"))
-                            //        {
-                            //            t.Value = transactionValues[15];
-                            //            t.LastRead = endTime;
-                            //        }
-                            //        else if (t.TagName.Contains("GVTotalizer"))
-                            //        {
-                            //            t.Value = transactionValues[30];
-                            //            t.LastRead = endTime;
-                            //        }
-                            //        else if (t.TagName.Contains("GSTVolume"))
-                            //        {
-                            //            t.Value = transactionValues[16];
-                            //            t.LastRead = endTime;
-                            //        }
-                            //        else if (t.TagName.Contains("GSTTotalizer"))
-                            //        {
-                            //            t.Value = transactionValues[31];
-                            //            t.LastRead = endTime;
-                            //        }
-                            //        else if (t.TagName.Contains("GSVVolume"))
-                            //        {
-                            //            t.Value = transactionValues[17];
-                            //            t.LastRead = endTime;
-                            //        }
-                            //        else if (t.TagName.Contains("GSVTotalizer"))
-                            //        {
-                            //            t.Value = transactionValues[32];
-                            //            t.LastRead = endTime;
-                            //        }
-                            //        else if (t.TagName.Contains("EndTime"))
-                            //        {
-                            //            t.Value = endTime.ToString();
-                            //            t.LastRead = endTime;
-                            //        }
-                            //        else if (t.TagName.Contains("MeterFactor"))
-                            //        {
-                            //            t.Value = transactionValues[23];
-                            //            t.LastRead = endTime;
-                            //        }
-                            //        else if (t.TagName.Contains("Temperature"))
-                            //        {
-                            //            t.Value = transactionValues[24];
-                            //            t.LastRead = endTime;
-                            //        }
-                            //        else if (t.TagName.Contains("Density"))
-                            //        {
-                            //            t.Value = transactionValues[25];
-                            //            t.LastRead = endTime;
-                            //        }
-                            //        else if (t.TagName.Contains("Pressure"))
-                            //        {
-                            //            t.Value = transactionValues[26];
-                            //            t.LastRead = endTime;
-                            //        }
-                            //        else if (t.TagName.Contains("CTL"))
-                            //        {
-                            //            t.Value = transactionValues[27];
-                            //            t.LastRead = endTime;
-                            //        }
-                            //        else if (t.TagName.Contains("CPL"))
-                            //        {
-                            //            t.Value = transactionValues[28];
-                            //            t.LastRead = endTime;
-                            //        }
-                            //    }
-
                             Thread.Sleep(5000);
-
-                                loadStatus = 4;
-                            //}
+                            loadStatus = 4;
                         }
                     }
                     m_inStatusTimer = false;
