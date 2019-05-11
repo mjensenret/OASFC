@@ -270,33 +270,32 @@ namespace IntegrationDrivers
                                 else if (t.TagName.Contains("MeterFactor"))
                                 {
                                     var mf = SendCommand("PV P1 302");
-                                    //TODO: test using terminal & update this value
-                                    t.Value = 0;
-                                    //t.LastRead = endTime;
+                                    t.Value = Convert.ToDecimal(mf.Substring(14,7));
+                                    t.LastRead = endTime;
                                 }
                                 else if (t.TagName.Contains("Density"))
                                 {
                                     var d = SendCommand("LD 01 001");
-                                    t.Value = Convert.ToDecimal(d.Substring(13,8));
+                                    t.Value = Convert.ToDecimal(d.Substring(13, 6));
                                     t.LastRead = endTime;
                                 }
                                 else if (t.TagName.Contains("Pressure"))
                                 {
                                     var p = SendCommand("LP 01 001");
-                                    t.Value = Convert.ToDecimal(p.Substring(13, 8));
+                                    t.Value = Convert.ToDecimal(p.Substring(13, 6));
                                     t.LastRead = endTime;
                                 }
                                 else if (t.TagName.Contains("CTL"))
                                 {
                                     var ctl = SendCommand("DY B110");
-                                    //t.Value = transactionValues[27];
-                                    //t.LastRead = endTime;
+                                    t.Value = Convert.ToDecimal(ctl.Substring(31, 5));
+                                    t.LastRead = endTime;
                                 }
                                 else if (t.TagName.Contains("CPL"))
                                 {
                                     var cpl = SendCommand("DY B111");
-                                    //t.Value = transactionValues[28];
-                                    //t.LastRead = endTime;
+                                    t.Value = Convert.ToDecimal(cpl.Substring(31, 5));
+                                    t.LastRead = endTime;
                                 }
                                 else if (t.TagName.Contains("TransactionNumber"))
                                 {
