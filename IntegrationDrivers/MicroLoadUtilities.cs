@@ -1,4 +1,6 @@
-﻿using IntegrationDrivers.Models;
+﻿using Common.Models;
+using IntegrationDrivers.Models;
+using Microsoft.Extensions.Options;
 using OASDriverInterface;
 using System;
 using System.Collections;
@@ -9,34 +11,42 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using WebServices.Interfaces;
 
 namespace IntegrationDrivers
 {
     public class MicroLoadUtilities : BaseDriver
     {
-        private int m_CartId = 1;
+        //private int m_CartId = 0;
         private bool m_inStatusTimer = false;
         private Timer statusTimer;
         private Timer dynamicDisplayTimer;
         private bool m_connected;
-
+        private UDISettings _udiSettings;
+        private RegisterHeadSettings _registerHeadSettings;
+        private ITransloadWS _ws;
 
         
-        public MicroLoadUtilities()
+        public MicroLoadUtilities(RegisterHeadSettings settings, ITransloadWS transloadWS)
             : base()
         {
+            _registerHeadSettings = settings;
             statusTimer = new Timer(StatusTimerRoutine, null, Timeout.Infinite, Timeout.Infinite);
             dynamicDisplayTimer = new Timer(DynamicDisplayTimer, null, Timeout.Infinite, Timeout.Infinite);
+            _ws = transloadWS;
         }
 
 
         public override bool Connect(string ipAddress, string armAddress, string port)
         {
+            //m_CartId = _registerHeadSettings.CartId;
+
             m_connected = base.Connect(ipAddress, armAddress, port);
             if(m_connected)
             {
-                statusTimer.Change(1000, 1000);
+                statusTimer.Change(5000, 5000);
             }
+            
             return m_connected;
         }
 
@@ -81,9 +91,9 @@ namespace IntegrationDrivers
 
                 m_inStatusTimer = true;
 
-                var cartId = tagList.Where(x => x.TagName.Contains("CartId")).First();
-                cartId.Value = m_CartId;
-                cartId.LastRead = DateTime.Now;
+                //var cartId = tagList.Where(x => x.TagName.Contains("CartId")).First();
+                //cartId.Value = m_CartId;
+                //cartId.LastRead = DateTime.Now;
 
                 if (loadStatus == 0)
                 {
@@ -100,6 +110,10 @@ namespace IntegrationDrivers
                             if (promptResult != null)
                             {
                                 var tagName = getPromptTag(promptStep).TagName;
+                                if(tagName.Contains("OperatorId"))
+                                {
+                                    //TODO: call webservice to validate operatorId
+                                }
                                 var promptLength = Convert.ToInt32(getPromptTag(promptStep).PromptLength);
                                 var updTag = getTag(tagName);
                                 updTag.LastRead = DateTime.Now;
@@ -133,26 +147,46 @@ namespace IntegrationDrivers
                             {
                                 var tagName = getPromptTag(promptStep).TagName;
                                 var promptLength = Convert.ToInt32(getPromptTag(promptStep).PromptLength);
-                                var updTag = getTag(tagName);
-                                updTag.LastRead = DateTime.Now;
-                                updTag.Value = promptResult.Substring(7, promptLength);
-                                if(promptStep < totalPromptCount)
+                                if (tagName.Contains("OrderId"))
                                 {
-                                    var nextPrompt = getPromptTag(promptStep + 1);
-                                    var nextPromptResult = SendNextPrompt(nextPrompt.Prompt, nextPrompt.PromptLength);
-                                    if (nextPromptResult.Contains("OK"))
+                                    var value = Convert.ToInt32(promptResult.Substring(7, promptLength));
+                                    bool valid = _ws.CheckAuditNumber(value);
+                                    if(valid)
                                     {
-                                        promptStep++;
-                                        var nextPromptTag = getTag(nextPrompt.TagName);
-                                        nextPromptTag.LastRead = DateTime.Now;
-                                        nextPromptTag.Value = 0;
+                                        var updTag = getTag(tagName);
+                                        updTag.LastRead = DateTime.Now;
+                                        updTag.Value = promptResult.Substring(7, promptLength);
+
+                                        if (promptStep < totalPromptCount)
+                                        {
+                                            var nextPrompt = getPromptTag(promptStep + 1);
+                                            var nextPromptResult = SendNextPrompt(nextPrompt.Prompt, nextPrompt.PromptLength);
+                                            if (nextPromptResult.Contains("OK"))
+                                            {
+                                                promptStep++;
+                                                var nextPromptTag = getTag(nextPrompt.TagName);
+                                                nextPromptTag.LastRead = DateTime.Now;
+                                                nextPromptTag.Value = 0;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            loadStatus = 1;
+                                            promptStep = 1;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        var resendPrompt = getPromptTag(promptStep);
+                                        var resendPromptResult = SendNextPrompt(resendPrompt.Prompt, resendPrompt.PromptLength);
+                                        if (resendPromptResult.Contains("OK"))
+                                        {
+                                            //TODO: Do I need to do anything here?
+                                        }
                                     }
                                 }
-                                else
-                                {
-                                    loadStatus = 1;
-                                    promptStep = 1;
-                                }
+
+
                             }
                         }
                         m_inStatusTimer = false;

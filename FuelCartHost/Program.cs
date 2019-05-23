@@ -1,8 +1,17 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Common.Models;
+using FuelCartHost.Interfaces;
+using FuelCartHost.Models;
+using FuelCartHost.Services;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using UniversalDriverInterface;
+using WebServices.Interfaces;
+using WebServices;
+using IntegrationDrivers;
 
 namespace FuelCartHost
 {
@@ -10,94 +19,52 @@ namespace FuelCartHost
     {
         static IntegrationHost()
         {
-            dom = System.AppDomain.CurrentDomain;
-        }
-
-        private static DriverInterface m_Driver;
-        private static string ServiceNode = "127.0.0.1"; // IP Address, network node, or registered domain name when the central service is running.
-        private static string LiveDataCloudNode = ""; // The live data cloud source service to use when the central service is hosting live data cloud nodes.
-        private static Int32 PortNumber = 58727; // Port number to communicate to OAS Service.
-        private static string MachineName = "LocalMachineName"; // Must be unique for each instance of the driver running.
-        private static bool StoreAndForward = true; // When enabled data will be buffered on network failure or when the service is not running.
-        private static string UserName = ""; // Required if using automatic tag creation on service with security enabled.
-        private static string Password = ""; // Required if using automatic tag creation on service with security enabled.
-        private static string DeviceType = "MicroLoad";
-
-        private static AppDomain _dom;
-
-        private static AppDomain dom
-        {
-            [MethodImpl(MethodImplOptions.Synchronized)]
-            get
-            {
-                return _dom;
-            }
-
-            [MethodImpl(MethodImplOptions.Synchronized)]
-            set
-            {
-                if (_dom != null)
-                {
-                    _dom.ProcessExit -= ProcessExit;
-                }
-
-                _dom = value;
-                if (_dom != null)
-                {
-                    _dom.ProcessExit += ProcessExit;
-                }
-            }
         }
 
         static void Main(string[] args)
         {
             try
             {
-                var config = new ConfigurationBuilder()
-                   .SetBasePath(Directory.GetCurrentDirectory())
-                   .AddJsonFile("appsettings.json", false, true)
-                   .Build();
+                var serviceCollection = new ServiceCollection();
+                ConfigureServices(serviceCollection);
 
-                try
-                {
-                    ServiceNode = config["OASDriverConfig:ServiceNode"];
-                    LiveDataCloudNode = config["OASDriverConfig:LiveDataCloudNode"];
-                    PortNumber = int.Parse(config["OASDriverConfig:PortNumber"]);
-                    MachineName = config["OASDriverConfig:MachineName"];
-                    StoreAndForward = bool.Parse(config["OASDriverConfig:StoreAndForward"]);
-                    UserName = config["OASDriverConfig:UserName"];
-                    Password = config["OASDriverConfig:Password"];
-                    DeviceType = config["OASDriverConfig:DeviceType"];
-                    DeviceType = config["OASDriverConfig:DeviceType"];
-                }
-                catch (Exception)
-                {
-                }
+                var serviceProvider = serviceCollection.BuildServiceProvider();
 
-                Console.WriteLine("Connecting...");
-                // create instance of UDI
-                m_Driver = new DriverInterface(ServiceNode, LiveDataCloudNode, PortNumber, MachineName, StoreAndForward, UserName, Password, DeviceType);
-
-                ConsoleHost.WaitForShutdown();
+                serviceProvider.GetService<MainHost>().Run();
             }
             catch (Exception ex)
             {
-                doCleanup();
+
             }
         }
 
-        public static void doCleanup()
+        private static void ConfigureServices(IServiceCollection serviceCollection)
         {
-            if (m_Driver != null)
-            {
-                // allow for cleanup if any exceptions are thrown on start, or if the process shuts down, etc.
-                m_Driver.Disconnect();
-                m_Driver = null;
-            }
-        }
-        public static void ProcessExit(object sender, EventArgs e)
-        {
-            doCleanup();
+            // configure logging
+            serviceCollection
+                .AddLogging(b => b
+                    .AddDebug()
+                    .AddConsole()
+                );
+
+            // build config
+            var config = new ConfigurationBuilder()
+               .SetBasePath(Directory.GetCurrentDirectory())
+               .AddJsonFile("appsettings.json", false, true)
+               .AddEnvironmentVariables()
+               .Build();
+
+            serviceCollection.AddOptions();
+            serviceCollection.Configure<UDISettings>(config.GetSection("UDISettings"));
+            serviceCollection.Configure<WebServiceSettings>(config.GetSection("WebServiceSettings"));
+            serviceCollection.Configure<RegisterHeadSettings>(config.GetSection("RegisterHeadSettings"));
+
+            // add services:
+            serviceCollection.AddTransient<IDriverService, DriverService>();
+            serviceCollection.AddTransient<ITransloadWS, TransloadWS>();
+
+            // add app
+            serviceCollection.AddTransient<MainHost>();
         }
     }
 }

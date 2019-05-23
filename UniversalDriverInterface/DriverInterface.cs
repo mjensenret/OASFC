@@ -10,6 +10,9 @@ using IntegrationDrivers.Models;
 using static IntegrationDrivers.MicroLoadUtilities;
 using System.Linq;
 using static IntegrationDrivers.Infrastructure.Enumerations;
+using Common.Models;
+using Microsoft.Extensions.Options;
+using WebServices.Interfaces;
 
 namespace UniversalDriverInterface
 {
@@ -19,12 +22,12 @@ namespace UniversalDriverInterface
         //Demo Enumerations
         private bool InstanceFieldsInitialized = false;
 
-        private string m_IpAddress = "172.18.114.101";
+        private string m_IpAddress /*= "172.18.114.101"*/;
         //private string m_IpAddress = "10.4.12.26";
-        private string m_Port = "7734";
-        private string m_VolumeUnits = "Gallons";
-        private string m_armAddress = "01";
-        private int m_cartId = 1;
+        private string m_Port/* = "7734"*/;
+        private string m_VolumeUnits/* = "Gallons"*/;
+        private string m_armAddress/* = "01"*/;
+        private int m_cartId = 0;
 
         private int promptStep = 0;
         private int promptCount;
@@ -34,12 +37,18 @@ namespace UniversalDriverInterface
         public Queue m_DataValuesQueue = new Queue();
         private Hashtable m_DataValuesHashTable = new Hashtable();
 
-        private void InitializeInstanceFields()
+        private void InitializeInstanceFields(RegisterHeadSettings headSettings)
         {
             //promptStep = 1;
             
             oasTagTimer = new Timer(UpdateOASTagTimerRoutine, null, Timeout.Infinite, Timeout.Infinite);
             readMicroLoad = new Timer(ReadMicroloadValuesRoutine, null, Timeout.Infinite, Timeout.Infinite);
+
+            m_Port = headSettings.Port;
+            m_VolumeUnits = headSettings.VolumeUnits;
+            m_armAddress = headSettings.ArmAddress;
+            m_IpAddress = headSettings.IPAddress;
+            m_cartId = headSettings.CartId;
         }
 
         private IntegrationDrivers.BaseDriver m_device;
@@ -67,27 +76,63 @@ namespace UniversalDriverInterface
         //In the working example this is read from appsettings.json.  You can dynamically set this as well.  This must match the Machine Name defined in the Driver Interface of the OAS Service.
         private string m_MachineName = "FuelingInterface";
 
-        public DriverInterface(string OASServiceNode, string LiveDataCloudNode, int PortNumber, string MachineName, bool StoreAndForward, string UserName, string Password, string DeviceType)
+        //public DriverInterface(string OASServiceNode, string LiveDataCloudNode, int PortNumber, string MachineName, bool StoreAndForward, string UserName, string Password, string DeviceType, RegisterHeadSettings rh)
+        //{
+        //    if (!InstanceFieldsInitialized)
+        //    {
+        //        InitializeInstanceFields();
+        //        InstanceFieldsInitialized = true;
+                
+        //    }
+        //    m_MachineName = MachineName;
+        //    m_OASDriverInterface = new OASDriverInterface.OASDriverInterface(m_DriverName, OASServiceNode, LiveDataCloudNode, PortNumber, MachineName, StoreAndForward, UserName, Password);
+        //    if(DeviceType == "MicroLoad")
+        //    {
+        //        Console.WriteLine("Loading Microload....");
+        //        m_IpAddress = rh.IPAddress;
+        //        m_device = new IntegrationDrivers.MicroLoadUtilities(rh);              
+        //    }
+        //    else if (DeviceType == "AccuLoad")
+        //    {
+        //        Console.WriteLine("Loading AccuLoad....");
+        //        m_device = new IntegrationDrivers.AccuLoadUtilities();
+        //    }
+            
+
+        //    m_OASDriverInterface.SetDefaults(GetDefaultDriverConfig(), false);
+        //    m_OASDriverInterface.SetDefaults(GetDefaultTagConfig(), true);
+        //    m_OASDriverInterface.AddDriverInterfaceToService(GetDriverInterfaceToAdd()); // Optional, automatically add / update driver interface.
+        //    m_OASDriverInterface.AddTagsToService(GetTagsToAdd()); // Optional, automatically add / update tags.
+        //    SubscribeToEvents();
+        //}
+
+        public DriverInterface(UDISettings uDI, RegisterHeadSettings rh, ITransloadWS transloadWS)
         {
             if (!InstanceFieldsInitialized)
             {
-                InitializeInstanceFields();
+                InitializeInstanceFields(rh);
                 InstanceFieldsInitialized = true;
-                
+
             }
-            m_MachineName = MachineName;
-            m_OASDriverInterface = new OASDriverInterface.OASDriverInterface(m_DriverName, OASServiceNode, LiveDataCloudNode, PortNumber, MachineName, StoreAndForward, UserName, Password);
-            if(DeviceType == "MicroLoad")
+            m_MachineName = uDI.MachineName;
+            m_OASDriverInterface = new OASDriverInterface.OASDriverInterface(m_DriverName, uDI.ServiceNode, uDI.LiveDataCloudNode, uDI.PortNumber, uDI.MachineName, uDI.StoreAndForward, uDI.Username, uDI.Password);
+            //m_cartId = rh.CartId;
+            if (rh.DeviceType == "MicroLoad")
             {
                 Console.WriteLine("Loading Microload....");
-                m_device = new IntegrationDrivers.MicroLoadUtilities();
+                m_IpAddress = rh.IPAddress;
+                m_device = new IntegrationDrivers.MicroLoadUtilities(rh, transloadWS);
             }
-            else if (DeviceType == "AccuLoad")
+            else if (rh.DeviceType == "AccuLoad")
             {
                 Console.WriteLine("Loading AccuLoad....");
-                m_device = new IntegrationDrivers.AccuLoadUtilities();
+                m_device = new IntegrationDrivers.AccuLoadUtilities(rh);
             }
-            
+            else if (rh.DeviceType == "TopTech")
+            {
+                Console.WriteLine("Loading TopTech....");
+            }
+
 
             m_OASDriverInterface.SetDefaults(GetDefaultDriverConfig(), false);
             m_OASDriverInterface.SetDefaults(GetDefaultTagConfig(), true);
@@ -95,7 +140,6 @@ namespace UniversalDriverInterface
             m_OASDriverInterface.AddTagsToService(GetTagsToAdd()); // Optional, automatically add / update tags.
             SubscribeToEvents();
         }
-
         #region Driver Section
 
         public string DriverName
@@ -528,6 +572,17 @@ namespace UniversalDriverInterface
                             m_Tags.Add(TagID, Props);
                         if (m_LastUpdateTime.Contains(TagID))
                             m_LastUpdateTime.Remove(TagID);
+                    }
+
+                    try
+                    {
+                        var cartId = tagList.Where(x => x.TagName.Contains("CartId")).First();
+                        cartId.Value = m_cartId;
+                        cartId.LastRead = DateTime.Now;
+                    }
+                    catch (Exception e)
+                    {
+
                     }
 
                     m_device.LoadTags(tagList);

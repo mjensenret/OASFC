@@ -3,13 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.421
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FuelCartHost", "FuelCartHost\FuelCartHost.csproj", "{244D54B5-5406-4469-9983-BFF851ACAC46}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FuelCartHost", "FuelCartHost\FuelCartHost.csproj", "{244D54B5-5406-4469-9983-BFF851ACAC46}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IntegrationDrivers", "IntegrationDrivers\IntegrationDrivers.csproj", "{FC8C2B3A-0484-4D20-AF30-240E62243676}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IntegrationDrivers", "IntegrationDrivers\IntegrationDrivers.csproj", "{FC8C2B3A-0484-4D20-AF30-240E62243676}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebServices", "WebServices\WebServices.csproj", "{363E7C60-EBF1-4813-B5EE-3DF72B767069}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebServices", "WebServices\WebServices.csproj", "{363E7C60-EBF1-4813-B5EE-3DF72B767069}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UniversalDriverInterface", "UniversalDriverInterface\UniversalDriverInterface.csproj", "{698EF03B-D242-48F8-8DB2-0AAD123DDC7B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UniversalDriverInterface", "UniversalDriverInterface\UniversalDriverInterface.csproj", "{698EF03B-D242-48F8-8DB2-0AAD123DDC7B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "Common\Common.csproj", "{E46F430C-EA05-46F7-B8F5-325781ED9957}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{698EF03B-D242-48F8-8DB2-0AAD123DDC7B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{698EF03B-D242-48F8-8DB2-0AAD123DDC7B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{698EF03B-D242-48F8-8DB2-0AAD123DDC7B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E46F430C-EA05-46F7-B8F5-325781ED9957}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E46F430C-EA05-46F7-B8F5-325781ED9957}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E46F430C-EA05-46F7-B8F5-325781ED9957}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E46F430C-EA05-46F7-B8F5-325781ED9957}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

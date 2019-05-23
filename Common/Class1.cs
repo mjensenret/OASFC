@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace WebServices
+namespace Common
 {
     public class Class1
     {

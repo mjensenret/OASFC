@@ -1,4 +1,5 @@
-﻿using IntegrationDrivers.Models;
+﻿using Common.Models;
+using IntegrationDrivers.Models;
 using OASDriverInterface;
 using System;
 using System.Collections;
@@ -14,21 +15,25 @@ namespace IntegrationDrivers
 {
     public class AccuLoadUtilities : BaseDriver
     {
-        private int m_CartId = 1;
+        private int m_CartId = 0;
         private bool m_inStatusTimer = false;
         private Timer statusTimer;
         private Timer dynamicDisplayTimer;
         private bool m_connected;
+        private UDISettings _udiSettings;
+        private RegisterHeadSettings _registerHeadSettings;
 
-        public AccuLoadUtilities() :
+        public AccuLoadUtilities(RegisterHeadSettings settings) :
             base()
         {
+            _registerHeadSettings = settings;
             statusTimer = new Timer(StatusTimerRoutine, null, Timeout.Infinite, Timeout.Infinite);
             dynamicDisplayTimer = new Timer(DynamicDisplayTimer, null, Timeout.Infinite, Timeout.Infinite);
         }
 
         public override bool Connect(string ipAddress, string armAddress, string port)
         {
+            m_CartId = _registerHeadSettings.CartId;
             m_connected = base.Connect(ipAddress, armAddress, port);
             if(m_connected)
             {

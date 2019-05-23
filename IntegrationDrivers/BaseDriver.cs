@@ -1,4 +1,6 @@
-﻿using IntegrationDrivers.Models;
+﻿using Common.Models;
+using IntegrationDrivers.Models;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,6 +17,8 @@ namespace IntegrationDrivers
         private string volumeUnits;
         public Socket sock;
         private static bool m_connected;
+        private readonly UDISettings _udiSettings;
+        private RegisterHeadSettings _registerHeadSettings;
 
         public List<Prompts> prompts = new List<Prompts>();
         public List<TagModel> tagList = new List<TagModel>();
@@ -32,6 +36,8 @@ namespace IntegrationDrivers
 
         public BaseDriver()
         {
+            //_udiSettings = udiSettings.Value;
+            //_registerHeadSettings = registerHeadSettings.Value;
             sock = socket();
         }
 
