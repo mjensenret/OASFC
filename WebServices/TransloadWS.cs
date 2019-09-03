@@ -1,5 +1,6 @@
 ﻿using System;
 using Common.Models;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using RestSharp;
@@ -15,14 +16,17 @@ namespace WebServices
         private static string baseUrl;
         private static string user;
         private static string pass;
+        private readonly ILogger<TransloadWS> _logger;
 
-        public TransloadWS(IOptions<WebServiceSettings> config)
+        public TransloadWS(IOptions<WebServiceSettings> config, ILogger<TransloadWS> logger)
         {
             settings = config.Value;
+            _logger = logger;
         }
 
         public void Connect()
         {
+            _logger.LogInformation(1000, "WS Connect method has been called.");
             baseUrl = settings.WebServiceURL;
             user = settings.WSUserName;
             pass = settings.WSPassword;
@@ -50,6 +54,7 @@ namespace WebServices
 
         public bool CheckAuditNumber(int transferOrderId)
         {
+            _logger.LogInformation(1000, $"WS_CheckAuditNumber AuditNumber: {transferOrderId}");
             var client = getUrl(transferOrderId);
             var request = new RestRequest(Method.GET);
             request.RequestFormat = DataFormat.Json;
@@ -65,16 +70,19 @@ namespace WebServices
                     }
                     else
                     {
+                        _logger.LogError($"response StatusCode: {response.StatusCode.ToString()}");
                         return false;
                     }
                 }
                 else
                 {
+                    _logger.LogError($"Response resulted in error: {response.ErrorMessage}");
                     return false;
                 }
             }
             catch (Exception e)
             {
+                _logger.LogCritical($"Exception has occurred {e.Message}");
                 return false;
             }
         }

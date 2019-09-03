@@ -1,5 +1,6 @@
 ﻿using Common.Models;
 using IntegrationDrivers.Models;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OASDriverInterface;
 using System;
@@ -25,6 +26,7 @@ namespace IntegrationDrivers
         private UDISettings _udiSettings;
         private RegisterHeadSettings _registerHeadSettings;
         private ITransloadWS _ws;
+        private ILogger<MicroLoadUtilities> _logger;
 
         
         public MicroLoadUtilities(RegisterHeadSettings settings, ITransloadWS transloadWS)
@@ -138,7 +140,7 @@ namespace IntegrationDrivers
                     }
                     else if (promptStep <= totalPromptCount)
                     {
-                        
+                     
                         var result = SendCommand("RS");
                         if (result != null && result.Contains("KY"))
                         {
@@ -184,6 +186,30 @@ namespace IntegrationDrivers
                                             //TODO: Do I need to do anything here?
                                         }
                                     }
+                                }
+                                else
+                                {
+                                    var lastTag = getTag(tagName);
+                                    lastTag.LastRead = DateTime.Now;
+                                    lastTag.Value = promptResult.Substring(7, promptLength);
+                                    if(promptStep < totalPromptCount)
+                                    {
+                                        var continuePrompts = getPromptTag(promptStep + 1);
+                                        var continueResult = SendNextPrompt(continuePrompts.Prompt, continuePrompts.PromptLength);
+                                        if (continueResult.Contains("OK"))
+                                        {
+                                            promptStep++;
+                                            var nextPromptTag2 = getTag(continuePrompts.TagName);
+                                            nextPromptTag2.LastRead = DateTime.Now;
+                                            nextPromptTag2.Value = 0;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        loadStatus = 1;
+                                        promptStep = 1;
+                                    }
+
                                 }
 
 

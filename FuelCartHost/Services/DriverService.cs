@@ -29,7 +29,8 @@ namespace FuelCartHost.Services
 
         public void StartDriverInterface()
         {
-            Console.WriteLine("Starting driver interface.");
+            //Console.WriteLine("Starting driver interface.");
+            log.LogInformation("StartDriverInterface has been called.");
 
             //m_Driver = new DriverInterface(_config.ServiceNode, _config.LiveDataCloudNode, _config.PortNumber, _config.MachineName, _config.StoreAndForward, _config.Username, _config.Password, _registerHead.DeviceType, _registerHead);
             m_Driver = new DriverInterface(_config, _registerHead, _transloadWS);

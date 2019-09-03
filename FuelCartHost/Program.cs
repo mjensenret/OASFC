@@ -5,6 +5,7 @@ using FuelCartHost.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.EventLog;
 using System;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -42,10 +43,14 @@ namespace FuelCartHost
         {
             // configure logging
             serviceCollection
-                .AddLogging(b => b
+                .AddLogging(l => l
                     .AddDebug()
-                    .AddConsole()
-                );
+                    .AddEventLog(new EventLogSettings
+                    {
+                        LogName = "FuelCartLog",
+                        SourceName = "UDI FC Driver"
+                    })
+                    );
 
             // build config
             var config = new ConfigurationBuilder()

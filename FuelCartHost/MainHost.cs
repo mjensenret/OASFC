@@ -61,8 +61,8 @@ namespace FuelCartHost
         }
 
         public void Run()
-        {           
-
+        {
+            _logger.LogInformation("Application starting....");
             _driverService.StartDriverInterface();
             _transloadWS.Connect();
 
